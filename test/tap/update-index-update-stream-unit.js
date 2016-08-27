@@ -103,6 +103,20 @@ test('createEntryUpdateStream partial update', function (t) {
   })
 })
 
+test('createEntryUpdateStream not stale', function (t) {
+  setup()
+  var now = Date.now()
+  var staleness = 600
+  _createEntryUpdateStream(ALL, {}, staleness, now, function (err, stream, latest) {
+    t.ifError(err, 'completed successfully')
+    t.notOk(stream, 'no stream returned')
+    t.notOk(latest, 'no latest returned')
+    server.done()
+    cleanup()
+    t.end()
+  })
+})
+
 test('cleanup', function (t) {
   cleanup()
   server.close()

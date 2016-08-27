@@ -87,7 +87,7 @@ test('createEntryStream cache only', function (t) {
     other: { name: 'other', version: '1.0.0' }
   }))
   fixture.create(cachePath)
-  _createEntryStream(cachePath, ALL, {}, 600, function (err, stream, latest) {
+  _createEntryStream(cachePath, ALL, {}, 10, function (err, stream, latest) {
     if (err) throw err
     t.equals(latest, cacheTime, '`latest` correctly extracted from cache')
     t.ok(stream, 'returned a stream')
