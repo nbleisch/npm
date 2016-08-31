@@ -103,6 +103,59 @@ test('createEntryUpdateStream partial update', function (t) {
   })
 })
 
+test('createEntryUpdateStream authed request', function (t) {
+  setup()
+  var token = 'thisisanauthtoken'
+  server.get('/-/all', { authorization: 'Bearer ' + token }).once().reply(200, {
+    '_updated': 1234,
+    'bar': { name: 'bar', version: '1.0.0' },
+    'foo': { name: 'foo', version: '1.0.0' }
+  }, {
+    date: Date.now() // should never be used.
+  })
+  _createEntryUpdateStream(ALL, { token: token }, 600, 0, function (err, stream, latest) {
+    if (err) throw err
+    t.equals(latest, 1234, '`latest` correctly extracted')
+    t.ok(stream, 'returned a stream')
+    var results = []
+    stream.on('data', function (pkg) {
+      results.push(pkg)
+    })
+    ms.finished(stream, function (err) {
+      if (err) throw err
+      t.deepEquals(results, [{
+        name: 'bar',
+        version: '1.0.0'
+      }, {
+        name: 'foo',
+        version: '1.0.0'
+      }])
+      server.done()
+      cleanup()
+      t.end()
+    })
+  })
+})
+
+test('createEntryUpdateStream bad auth', function (t) {
+  setup()
+  var token = 'thisisanauthtoken'
+  server.get('/-/all', { authorization: 'Bearer ' + token }).once().reply(401, {
+    error: 'unauthorized search request'
+  }, {
+    date: Date.now() // should never be used.
+  })
+  _createEntryUpdateStream(ALL, { token: token }, 600, 0, function (err, stream, latest) {
+    t.ok(err, 'got an error from auth failure')
+    t.notOk(stream, 'no stream returned')
+    t.notOk(latest, 'no latest returned')
+    t.match(err, /unauthorized/, 'failure message from request used')
+    server.done()
+    cleanup()
+    t.end()
+  })
+})
+
 test('createEntryUpdateStream not stale', function (t) {
   setup()
   var now = Date.now()
